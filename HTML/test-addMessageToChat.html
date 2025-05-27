@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Unit Test for addMessageToChat</title>
+    <style>
+        /* Basic styling for console visibility */
+        body { font-family: monospace; }
+        .passed { color: green; }
+        .failed { color: red; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h2>Unit Test for <code>addMessageToChat</code></h2>
+    <p>Open the browser's developer console (F12) to see test results.</p>
+    
+    <!-- Mock container for the chat messages -->
+    <div id="mockChatMessagesContainer" style="border: 1px solid #ccc; margin-top: 10px; padding: 10px; height: 200px; overflow-y: scroll;">
+        <p><em>Mock chat messages will appear here...</em></p>
+    </div>
+
+    <!-- Load the script to be tested. 
+         IMPORTANT: The path might need adjustment if script.js is not in a 'JavaScript' subdirectory 
+         relative to where this test HTML file is placed. Assuming it's in ../JavaScript/script.js 
+         if this test file is in HTML/ -->
+    <script src="../JavaScript/script.js"></script>
+
+    <script>
+        console.log("--- Starting Unit Tests for addMessageToChat ---");
+
+        // Store the original chatMessagesContainer if it exists, and then mock it.
+        const originalChatMessagesContainer = window.chatMessagesContainer;
+        window.chatMessagesContainer = document.getElementById('mockChatMessagesContainer');
+        
+        // If the original script directly assigns chatMessagesContainer on load,
+        // we might need to re-assign it here if it was overwritten by the script load.
+        // This ensures 'addMessageToChat' uses our mock.
+        if (window.chatMessagesContainer !== document.getElementById('mockChatMessagesContainer')) {
+            console.warn("window.chatMessagesContainer was potentially overwritten by script.js load. Re-assigning to mock for testing.");
+            window.chatMessagesContainer = document.getElementById('mockChatMessagesContainer');
+        }
+
+
+        let testsRun = 0;
+        let testsPassed = 0;
+
+        function runTest(testName, testFn) {
+            testsRun++;
+            console.log(`\\n--- Running Test: ${testName} ---`);
+            try {
+                testFn();
+            } catch (e) {
+                console.error(`%cERROR IN TEST "${testName}": ${e.message}`, "color: orange;");
+                // This counts as a failed assertion for simplicity here
+            }
+        }
+
+        function assert(condition, message) {
+            if (condition) {
+                console.log(`%c  PASSED: ${message}`, "color: green;");
+                testsPassed++;
+            } else {
+                console.error(`%c  FAILED: ${message}`, "color: red;");
+            }
+        }
+
+        // Test Suite
+        runTest("Test Case 1: User message", () => {
+            const userText = "Hello user";
+            const userSender = "user";
+            addMessageToChat(userText, userSender); // Appends to mockChatMessagesContainer
+            const userMessageDiv = window.chatMessagesContainer.lastChild;
+
+            assert(userMessageDiv !== null, "User message div was created and appended.");
+            if (userMessageDiv) {
+                assert(userMessageDiv.classList.contains('chat-message'), "User message div has 'chat-message' class.");
+                assert(userMessageDiv.classList.contains(userSender), `User message div has '${userSender}' class.`);
+                assert(userMessageDiv.textContent === userText, `User message div textContent is "${userText}".`);
+            } else { // If div is null, the above assertions would fail anyway
+                console.error("User message div not found, subsequent assertions skipped for this test case.");
+            }
+        });
+
+        runTest("Test Case 2: Bot message", () => {
+            const botText = "Hello bot";
+            const botSender = "bot";
+            addMessageToChat(botText, botSender);
+            const botMessageDiv = window.chatMessagesContainer.lastChild;
+
+            assert(botMessageDiv !== null, "Bot message div was created and appended.");
+            if (botMessageDiv) {
+                assert(botMessageDiv.classList.contains('chat-message'), "Bot message div has 'chat-message' class.");
+                assert(botMessageDiv.classList.contains(botSender), `Bot message div has '${botSender}' class.`);
+                assert(botMessageDiv.textContent === botText, `Bot message div textContent is "${botText}".`);
+            } else {
+                console.error("Bot message div not found, subsequent assertions skipped for this test case.");
+            }
+        });
+        
+        runTest("Test Case 3: Message with special characters & HTML-like content", () => {
+            const specialText = "<script>alert('XSS')</script> & \"'Test'";
+            const specialSender = "user";
+            addMessageToChat(specialText, specialSender);
+            const specialMessageDiv = window.chatMessagesContainer.lastChild;
+
+            assert(specialMessageDiv !== null, "Special char message div was created and appended.");
+            if (specialMessageDiv) {
+                assert(specialMessageDiv.classList.contains('chat-message'), "Special char message div has 'chat-message' class.");
+                assert(specialMessageDiv.classList.contains(specialSender), `Special char message div has '${specialSender}' class.`);
+                assert(specialMessageDiv.textContent === specialText, "Special char message div textContent is correctly set (textContent should escape HTML).");
+                // Check if innerHTML is different, which implies textContent did its job of not rendering HTML
+                assert(specialMessageDiv.innerHTML !== specialText, "Special char message div innerHTML shows escaped content, not raw HTML.");
+            } else {
+                 console.error("Special char message div not found, subsequent assertions skipped for this test case.");
+            }
+        });
+
+
+        // Summary
+        console.log(`\\n--- Test Summary ---`);
+        const totalAssertions = 12; // Manually count assertions for this simple runner
+        console.log(`Total Assertions Expected: ${totalAssertions}`); // Update this if you add/remove assertions
+        console.log(`Assertions Passed: ${testsPassed}`);
+        const assertionsFailed = totalAssertions - testsPassed;
+        console.log(`Assertions Failed: ${assertionsFailed}`);
+
+
+        if (assertionsFailed === 0) {
+            console.log("%cAll assertions passed successfully!", "color: green; font-weight: bold; font-size: 1.2em;");
+            document.body.insertAdjacentHTML('beforeend', '<p style="color:green; font-weight:bold;">All tests passed! Check console.</p>');
+        } else {
+            console.error("%cSome tests FAILED. See details above.", "color: red; font-weight: bold; font-size: 1.2em;");
+            document.body.insertAdjacentHTML('beforeend', '<p style="color:red; font-weight:bold;">Some tests FAILED! Check console.</p>');
+        }
+
+        // Cleanup: Restore original chatMessagesContainer
+        window.chatMessagesContainer = originalChatMessagesContainer;
+        console.log("--- Finished Unit Tests ---");
+    </script>
+</body>
+</html>
