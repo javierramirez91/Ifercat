@@ -71,7 +71,6 @@
         const chatInput = document.getElementById('chat-input');
         const chatSendBtn = document.getElementById('chat-send-btn');
 
-        const OPENROUTER_API_KEY = "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";
         const MODEL_NAME = "meta-llama/llama-3.3-8b-instruct:free";
 
         chatFab.addEventListener('click', () => {
